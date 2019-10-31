@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 public class Host implements Serializable, Comparable<Host> {
@@ -137,6 +138,11 @@ public class Host implements Serializable, Comparable<Host> {
      * Custom options
      */
     private Map<String, String> custom;
+
+    /**
+     * Group bookmarks in view
+     */
+    private Set<String> labels;
 
     /**
      * @param protocol Scheme
@@ -299,6 +305,9 @@ public class Host implements Serializable, Comparable<Host> {
         }
         if(null != custom) {
             dict.setMapForKey(custom, "Custom");
+        }
+        if(null != labels) {
+            dict.setStringListForKey(labels, "Labels");
         }
         return dict.getSerialized();
     }
@@ -585,6 +594,14 @@ public class Host implements Serializable, Comparable<Host> {
 
     public void setCustom(final Map<String, String> custom) {
         this.custom = custom;
+    }
+
+    public Set<String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(final Set<String> labels) {
+        this.labels = labels;
     }
 
     @Override
