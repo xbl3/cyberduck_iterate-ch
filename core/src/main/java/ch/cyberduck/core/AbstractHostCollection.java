@@ -156,7 +156,7 @@ public abstract class AbstractHostCollection extends Collection<Host> implements
     }
 
     public synchronized void doSort(final Comparator<Host> comparator) {
-        Collections.sort(FolderBookmarkCollection.favoritesCollection(), comparator);
+        Collections.sort(this, comparator);
         // Save new index
         this.save();
     }
