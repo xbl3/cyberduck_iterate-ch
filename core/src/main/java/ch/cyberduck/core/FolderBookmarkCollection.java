@@ -117,23 +117,6 @@ public class FolderBookmarkCollection extends AbstractFolderHostCollection {
         this.index();
     }
 
-    /**
-     * Importer for legacy bookmarks.
-     *
-     * @param c Existing collection
-     */
-    @Override
-    protected void load(final Collection<Host> c) {
-        super.load(c);
-        // Create index for imported collection
-        this.index();
-        this.sort();
-        for(Host bookmark : this) {
-            this.save(bookmark);
-        }
-        this.collectionLoaded();
-    }
-
     @Override
     protected synchronized void sort() {
         Collections.sort(this, new Comparator<Host>() {
