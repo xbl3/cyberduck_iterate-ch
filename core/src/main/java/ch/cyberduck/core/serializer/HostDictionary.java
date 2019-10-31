@@ -190,6 +190,10 @@ public class HostDictionary {
             if(customObj != null) {
                 bookmark.setCustom(customObj);
             }
+            final Object labelObj = dict.stringForKey("Label");
+            if(labelObj != null) {
+                bookmark.setLabel(labelObj.toString());
+            }
             return bookmark;
         }
         else {

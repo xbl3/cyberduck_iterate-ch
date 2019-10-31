@@ -142,7 +142,7 @@ public class Host implements Serializable, Comparable<Host> {
     /**
      * Group bookmarks in view
      */
-    private Set<String> labels;
+    private String label = StringUtils.EMPTY;
 
     /**
      * @param protocol Scheme
@@ -306,8 +306,8 @@ public class Host implements Serializable, Comparable<Host> {
         if(null != custom) {
             dict.setMapForKey(custom, "Custom");
         }
-        if(null != labels) {
-            dict.setStringListForKey(labels, "Labels");
+        if(null != label) {
+            dict.setStringForKey(label, "Label");
         }
         return dict.getSerialized();
     }
@@ -596,12 +596,12 @@ public class Host implements Serializable, Comparable<Host> {
         this.custom = custom;
     }
 
-    public Set<String> getLabels() {
-        return labels;
+    public String getLabel() {
+        return label;
     }
 
-    public void setLabels(final Set<String> labels) {
-        this.labels = labels;
+    public void setLabel(final String label) {
+        this.label = label;
     }
 
     @Override
