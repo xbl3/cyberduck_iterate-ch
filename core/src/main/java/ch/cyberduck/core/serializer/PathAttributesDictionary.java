@@ -28,18 +28,21 @@ import java.util.Collections;
 
 public class PathAttributesDictionary {
 
-    private final DeserializerFactory deserializer;
+    private final DeserializerFactory factory;
 
     public PathAttributesDictionary() {
-        this.deserializer = new DeserializerFactory();
+        this.factory = new DeserializerFactory();
     }
 
-    public PathAttributesDictionary(final DeserializerFactory deserializer) {
-        this.deserializer = deserializer;
+    public PathAttributesDictionary(final DeserializerFactory factory) {
+        this.factory = factory;
     }
 
     public <T> PathAttributes deserialize(T serialized) {
-        final Deserializer dict = deserializer.create(serialized);
+        return this.deserialize(factory.create(serialized));
+    }
+
+    public <T> PathAttributes deserialize(Deserializer<T> dict) {
         final PathAttributes attributes = new PathAttributes();
         final String sizeObj = dict.stringForKey("Size");
         if(sizeObj != null) {
@@ -81,7 +84,7 @@ public class PathAttributesDictionary {
         attributes.setStorageClass(dict.stringForKey("Storage Class"));
         final Object vaultObj = dict.objectForKey("Vault");
         if(vaultObj != null) {
-            attributes.setVault(new PathDictionary().deserialize(vaultObj));
+            attributes.setVault(new PathDictionary(factory).deserialize(vaultObj));
         }
         return attributes;
     }

@@ -33,7 +33,11 @@ public class DeserializerFactory<T> extends Factory<Deserializer> {
         super("factory.deserializer.class");
     }
 
-    public Deserializer create(final T dict) {
+    public DeserializerFactory(final Class<Deserializer> impl) {
+        super(impl);
+    }
+
+    public Deserializer<T> create(final T dict) {
         try {
             final Constructor<Deserializer> constructor = ConstructorUtils.getMatchingAccessibleConstructor(clazz, dict.getClass());
             return constructor.newInstance(dict);
@@ -43,7 +47,7 @@ public class DeserializerFactory<T> extends Factory<Deserializer> {
         }
     }
 
-    public static <T> Deserializer get(final T dict) {
+    public static <T> Deserializer<T> get(final T dict) {
         return factory.create(dict);
     }
 }
