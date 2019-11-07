@@ -25,6 +25,7 @@ import ch.cyberduck.core.serializer.Serializer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
@@ -142,7 +143,7 @@ public class Host implements Serializable, Comparable<Host> {
     /**
      * Group bookmarks in view
      */
-    private String label = StringUtils.EMPTY;
+    private Set<String> labels;
 
     /**
      * @param protocol Scheme
@@ -306,8 +307,8 @@ public class Host implements Serializable, Comparable<Host> {
         if(null != custom) {
             dict.setMapForKey(custom, "Custom");
         }
-        if(null != label) {
-            dict.setStringForKey(label, "Label");
+        if(null != labels) {
+            dict.setStringListForKey(labels, "Labels");
         }
         return dict.getSerialized();
     }
@@ -589,19 +590,19 @@ public class Host implements Serializable, Comparable<Host> {
     }
 
     public Map<String, String> getCustom() {
-        return custom;
+        return null == custom ? Collections.emptyMap() : custom;
     }
 
     public void setCustom(final Map<String, String> custom) {
         this.custom = custom;
     }
 
-    public String getLabel() {
-        return label;
+    public Set<String> getLabels() {
+        return null == labels ? Collections.emptySet() : labels;
     }
 
-    public void setLabel(final String label) {
-        this.label = label;
+    public void setLabels(final Set<String> labels) {
+        this.labels = labels;
     }
 
     @Override

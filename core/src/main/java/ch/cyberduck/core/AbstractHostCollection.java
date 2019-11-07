@@ -27,10 +27,9 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public abstract class AbstractHostCollection extends Collection<Host> implements EditableCollection {
     private static final long serialVersionUID = -255801158019850767L;
@@ -165,7 +164,23 @@ public abstract class AbstractHostCollection extends Collection<Host> implements
     }
 
     public Map<String, List<Host>> groups() {
-        return this.stream().collect(Collectors.groupingBy(Host::getLabel, LinkedHashMap::new, Collectors.toList()));
+        final Map<String, List<Host>> labels = new HashMap<>();
+        //this.forEach(host -> host.getLabels().forEach(label -> labels.getOrDefault(label, new ArrayList<>()).add(host)));
+        for(Host host : this) {
+            if(host.getLabels().isEmpty()) {
+                final List<Host> list = labels.getOrDefault(StringUtils.EMPTY, new ArrayList<>());
+                list.add(host);
+                labels.put(StringUtils.EMPTY, list);
+            }
+            else {
+                for(String label : host.getLabels()) {
+                    final List<Host> list = labels.getOrDefault(label, new ArrayList<>());
+                    list.add(host);
+                    labels.put(label, list);
+                }
+            }
+        }
+        return labels;
     }
 
     protected void sort() {

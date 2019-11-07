@@ -64,10 +64,7 @@ public class TransferDictionary {
     }
 
     public <T> Transfer deserialize(final T serialized) {
-        return this.deserialize(factory.create(serialized));
-    }
-
-    public <T> Transfer deserialize(final Deserializer<T> dict) {
+        final Deserializer dict = factory.create(serialized);
         final Object hostObj = dict.objectForKey("Host");
         if(null == hostObj) {
             log.warn("Missing host in transfer");

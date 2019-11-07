@@ -39,10 +39,7 @@ public class PathAttributesDictionary {
     }
 
     public <T> PathAttributes deserialize(T serialized) {
-        return this.deserialize(factory.create(serialized));
-    }
-
-    public <T> PathAttributes deserialize(Deserializer<T> dict) {
+        final Deserializer dict = factory.create(serialized);
         final PathAttributes attributes = new PathAttributes();
         final String sizeObj = dict.stringForKey("Size");
         if(sizeObj != null) {

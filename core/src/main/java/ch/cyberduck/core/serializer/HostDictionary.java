@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -58,10 +59,7 @@ public class HostDictionary {
     }
 
     public <T> Host deserialize(final T serialized) {
-        return this.deserialize(factory.create(serialized));
-    }
-
-    public <T> Host deserialize(final Deserializer<T> dict) {
+        final Deserializer dict = factory.create(serialized);
         Object protocolObj = dict.stringForKey("Protocol");
         if(protocolObj == null) {
             log.warn(String.format("Missing protocol key in %s", dict));
@@ -193,9 +191,9 @@ public class HostDictionary {
             if(customObj != null) {
                 bookmark.setCustom(customObj);
             }
-            final Object labelObj = dict.stringForKey("Label");
+            final Object labelObj = dict.stringForKey("Labels");
             if(labelObj != null) {
-                bookmark.setLabel(labelObj.toString());
+                bookmark.setLabels(new HashSet<>(dict.listForKey("Labels")));
             }
             return bookmark;
         }
