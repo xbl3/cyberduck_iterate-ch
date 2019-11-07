@@ -22,7 +22,11 @@ import ch.cyberduck.binding.application.NSMenuItem;
 import ch.cyberduck.binding.application.NSPopUpButton;
 import ch.cyberduck.binding.application.NSSecureTextField;
 import ch.cyberduck.binding.application.NSTextField;
+import ch.cyberduck.binding.application.NSTokenField;
+import ch.cyberduck.binding.foundation.NSArray;
+import ch.cyberduck.binding.foundation.NSEnumerator;
 import ch.cyberduck.binding.foundation.NSNotification;
+import ch.cyberduck.binding.foundation.NSObject;
 import ch.cyberduck.core.BookmarkNameProvider;
 import ch.cyberduck.core.DefaultCharsetProvider;
 import ch.cyberduck.core.Host;
@@ -36,12 +40,15 @@ import ch.cyberduck.ui.LoginInputValidator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.rococoa.Foundation;
+import org.rococoa.Rococoa;
 import org.rococoa.Selector;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TimeZone;
 
 public class DefaultBookmarkController extends BookmarkController {
