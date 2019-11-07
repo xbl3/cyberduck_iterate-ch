@@ -55,6 +55,8 @@ public class DefaultBookmarkController extends BookmarkController {
     @Outlet
     private NSTextField nicknameField;
     @Outlet
+    private NSTokenField tokenField;
+    @Outlet
     private NSPopUpButton certificatePopup;
     @Outlet
     private NSPopUpButton timezonePopup;
@@ -81,12 +83,12 @@ public class DefaultBookmarkController extends BookmarkController {
         window.makeFirstResponder(hostField);
     }
 
-    public void setNicknameField(final NSTextField field) {
-        this.nicknameField = field;
+    public void setNicknameField(final NSTextField f) {
+        this.nicknameField = f;
         notificationCenter.addObserver(this.id(),
             Foundation.selector("nicknameFieldDidChange:"),
             NSControl.NSControlTextDidChangeNotification,
-            field.id());
+            f.id());
         this.addObserver(new BookmarkObserver() {
             @Override
             public void change(final Host bookmark) {
@@ -101,13 +103,45 @@ public class DefaultBookmarkController extends BookmarkController {
         this.update();
     }
 
+    public void setTokenField(final NSTokenField f) {
+        this.tokenField = f;
+        notificationCenter.addObserver(this.id(),
+            Foundation.selector("tokenFieldDidChange:"),
+            NSControl.NSControlTextDidEndEditingNotification,
+            f.id());
+        this.addObserver(new BookmarkObserver() {
+            @Override
+            public void change(final Host bookmark) {
+                if(bookmark.getLabels().isEmpty()) {
+                    f.setObjectValue(NSArray.array());
+                }
+                else {
+                    f.setObjectValue(NSArray.arrayWithObjects(bookmark.getLabels().toArray(new String[bookmark.getLabels().size()])));
+                }
+            }
+        });
+    }
+
+    @Action
+    public void tokenFieldDidChange(final NSNotification sender) {
+        final Set<String> labels = new HashSet<>();
+        final NSArray dict = Rococoa.cast(tokenField.objectValue(), NSArray.class);
+        final NSEnumerator i = dict.objectEnumerator();
+        NSObject next;
+        while(null != (next = i.nextObject())) {
+            labels.add(next.toString());
+        }
+        bookmark.setLabels(labels);
+        this.update();
+    }
+
     @Override
-    public void setPasswordField(final NSSecureTextField field) {
-        super.setPasswordField(field);
+    public void setPasswordField(final NSSecureTextField f) {
+        super.setPasswordField(f);
         this.notificationCenter.addObserver(this.id(),
             Foundation.selector("passwordFieldTextDidEndEditing:"),
             NSControl.NSControlTextDidEndEditingNotification,
-            field.id());
+            f.id());
     }
 
     @Action
