@@ -40,10 +40,7 @@ public class PathDictionary {
     }
 
     public <T> Path deserialize(final T serialized) {
-        return this.deserialize(factory.create(serialized));
-    }
-
-    public <T> Path deserialize(final Deserializer<T> dict) {
+        final Deserializer dict = factory.create(serialized);
         final EnumSet<Path.Type> type = EnumSet.noneOf(Path.Type.class);
         final String typeObj = dict.stringForKey("Type");
         if(typeObj != null) {
