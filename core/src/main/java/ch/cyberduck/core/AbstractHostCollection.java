@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public abstract class AbstractHostCollection extends Collection<Host> implements EditableCollection {
     private static final long serialVersionUID = -255801158019850767L;
@@ -163,10 +164,14 @@ public abstract class AbstractHostCollection extends Collection<Host> implements
         this.save();
     }
 
-    public Map<String, List<Host>> groups() {
+    /**
+     * A bookmark may be member of multiple groups
+     *
+     * @return Map of bookmarks grouped by labels
+     */
+    public Map<String, List<Host>> groups(final HostFilter filter) {
         final Map<String, List<Host>> labels = new HashMap<>();
-        //this.forEach(host -> host.getLabels().forEach(label -> labels.getOrDefault(label, new ArrayList<>()).add(host)));
-        for(Host host : this) {
+        for(Host host : this.stream().filter(filter).collect(Collectors.toList())) {
             if(host.getLabels().isEmpty()) {
                 final List<Host> list = labels.getOrDefault(StringUtils.EMPTY, new ArrayList<>());
                 list.add(host);

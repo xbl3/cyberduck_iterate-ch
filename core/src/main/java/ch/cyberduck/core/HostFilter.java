@@ -18,6 +18,20 @@ package ch.cyberduck.core;
  *  dkocher@cyberduck.ch
  */
 
-public interface HostFilter {
+import java.util.function.Predicate;
+
+public interface HostFilter extends Predicate<Host> {
     boolean accept(Host host);
+
+    @Override
+    default boolean test(Host host) {
+        return this.accept(host);
+    }
+
+    HostFilter NONE = new HostFilter() {
+        @Override
+        public boolean accept(final Host host) {
+            return true;
+        }
+    };
 }
