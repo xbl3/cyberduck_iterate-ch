@@ -62,7 +62,7 @@ public class DefaultBookmarkController extends BookmarkController {
     @Outlet
     private NSTextField nicknameField;
     @Outlet
-    private NSTokenField tokenField;
+    private NSTokenField labelsField;
     @Outlet
     private NSPopUpButton certificatePopup;
     @Outlet
@@ -110,8 +110,8 @@ public class DefaultBookmarkController extends BookmarkController {
         this.update();
     }
 
-    public void setTokenField(final NSTokenField f) {
-        this.tokenField = f;
+    public void setLabelsField(final NSTokenField f) {
+        this.labelsField = f;
         notificationCenter.addObserver(this.id(),
             Foundation.selector("tokenFieldDidChange:"),
             NSControl.NSControlTextDidEndEditingNotification,
@@ -132,7 +132,7 @@ public class DefaultBookmarkController extends BookmarkController {
     @Action
     public void tokenFieldDidChange(final NSNotification sender) {
         final Set<String> labels = new HashSet<>();
-        final NSArray dict = Rococoa.cast(tokenField.objectValue(), NSArray.class);
+        final NSArray dict = Rococoa.cast(labelsField.objectValue(), NSArray.class);
         final NSEnumerator i = dict.objectEnumerator();
         NSObject next;
         while(null != (next = i.nextObject())) {

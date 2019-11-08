@@ -25,7 +25,7 @@
                 <outlet property="protocolPopup" destination="24" id="105"/>
                 <outlet property="timezonePopup" destination="36" id="106"/>
                 <outlet property="toggleOptionsButton" destination="31" id="107"/>
-                <outlet property="tokenField" destination="r1Q-0b-l5s" id="noh6Wai"/>
+                <outlet property="labelsField" destination="r1Q-0b-l5s" id="noh6Wai"/>
                 <outlet property="transferPopup" destination="55" id="108"/>
                 <outlet property="urlField" destination="16" id="109"/>
                 <outlet property="usernameField" destination="12" id="110"/>
