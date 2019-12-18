@@ -18,12 +18,14 @@ package ch.cyberduck.core.s3;
  * feedback@cyberduck.io
  */
 
+import ch.cyberduck.core.DisabledListProgressListener;
 import ch.cyberduck.core.Path;
 import ch.cyberduck.core.PathAttributes;
 import ch.cyberduck.core.PathContainerService;
 import ch.cyberduck.core.exception.AccessDeniedException;
 import ch.cyberduck.core.exception.BackgroundException;
 import ch.cyberduck.core.exception.InteroperabilityException;
+import ch.cyberduck.core.exception.NotfoundException;
 import ch.cyberduck.core.features.AttributesFinder;
 import ch.cyberduck.core.features.Encryption;
 import ch.cyberduck.core.io.Checksum;
@@ -61,6 +63,7 @@ public class S3AttributesFinderFeature implements AttributesFinder {
             return PathAttributes.EMPTY;
         }
         if(file.getType().contains(Path.Type.upload)) {
+            // Pending multipart upload
             return PathAttributes.EMPTY;
         }
         if(containerService.isContainer(file)) {
@@ -68,7 +71,23 @@ public class S3AttributesFinderFeature implements AttributesFinder {
             attributes.setRegion(new S3LocationFeature(session, session.getClient().getRegionEndpointCache()).getLocation(file).getIdentifier());
             return attributes;
         }
-        return this.toAttributes(this.details(file));
+        try {
+            return this.toAttributes(this.details(file));
+        }
+        catch(NotfoundException e) {
+            if(file.isPlaceholder()) {
+                // File may be marked as placeholder but not placeholder file exists. Check for common prefix returned.
+                try {
+                    new S3ObjectListService(session).list(file, new DisabledListProgressListener(), containerService.getKey(file), 1);
+                }
+                catch(NotfoundException n) {
+                    throw e;
+                }
+                // Common prefix only
+                return PathAttributes.EMPTY;
+            }
+            throw e;
+        }
     }
 
     protected StorageObject details(final Path file) throws BackgroundException {

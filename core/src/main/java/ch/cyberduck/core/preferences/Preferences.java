@@ -34,6 +34,7 @@ import ch.cyberduck.core.Scheme;
 import ch.cyberduck.core.aquaticprime.DonationKeyFactory;
 import ch.cyberduck.core.date.DefaultUserDateFormatter;
 import ch.cyberduck.core.diagnostics.DefaultInetAddressReachability;
+import ch.cyberduck.core.exception.AccessDeniedException;
 import ch.cyberduck.core.formatter.DecimalSizeFormatter;
 import ch.cyberduck.core.i18n.Locales;
 import ch.cyberduck.core.io.watchservice.NIOEventWatchService;
@@ -83,6 +84,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.Security;
@@ -99,38 +102,13 @@ import java.util.TimeZone;
 import com.google.common.collect.ImmutableMap;
 
 /**
- * Holding all application preferences. Default values get overwritten when loading
- * the <code>PREFERENCES_FILE</code>.
+ * Holding all application preferences. Default values get overwritten when loading the <code>PREFERENCES_FILE</code>.
  * Singleton class.
  */
 public abstract class Preferences implements Locales {
     private static final Logger log = Logger.getLogger(Preferences.class);
 
     protected static final String LIST_SEPERATOR = StringUtils.SPACE;
-
-    /**
-     * Called after the defaults have been set.
-     */
-    protected void post() {
-        // Ticket #2539
-        if(this.getBoolean("connection.dns.ipv6")) {
-            System.setProperty("java.net.preferIPv6Addresses", String.valueOf(true));
-        }
-        // TTL for DNS queries
-        Security.setProperty("networkaddress.cache.ttl", "10");
-        Security.setProperty("networkaddress.cache.negative.ttl", "5");
-        // Failure loading default key store with bouncycastle provider
-        System.setProperty("javax.net.ssl.trustStoreType", "JKS");
-        // Register bouncy castle as preferred provider. Used in Cyptomator, SSL and SSH
-        final int position = this.getInteger("connection.ssl.provider.bouncycastle.position");
-        final BouncyCastleProvider provider = new BouncyCastleProvider();
-        // Add missing factory. http://bouncy-castle.1462172.n4.nabble.com/Keychain-issue-as-of-version-1-53-follow-up-tc4659509.html
-        provider.put("Alg.Alias.SecretKeyFactory.PBE", "PBEWITHSHAAND3-KEYTRIPLEDES-CBC");
-        if(log.isInfoEnabled()) {
-            log.info(String.format("Install provider %s at position %d", provider, position));
-        }
-        Security.insertProviderAt(provider, position);
-    }
 
     /**
      * Update the given property with a string value.
@@ -243,10 +221,29 @@ public abstract class Preferences implements Locales {
         }
     }
 
+    protected void setDefaults(final Local defaults) {
+        if(defaults.exists()) {
+            final Properties props = new Properties();
+            try (final InputStream in = defaults.getInputStream()) {
+                props.load(in);
+            }
+            catch(AccessDeniedException | IOException e) {
+                // Ignore failure loading configuration
+            }
+            for(Map.Entry<Object, Object> entry : props.entrySet()) {
+                this.setDefault(entry.getKey().toString(), entry.getValue().toString());
+            }
+        }
+    }
+
     /**
      * setting the default prefs values
      */
     protected void setDefaults() {
+        // TTL for DNS queries
+        Security.setProperty("networkaddress.cache.ttl", "10");
+        Security.setProperty("networkaddress.cache.negative.ttl", "5");
+
         this.setDefault("application.version", Version.getSpecification());
         this.setDefault("application.revision", Version.getImplementation());
 
@@ -299,8 +296,10 @@ public abstract class Preferences implements Locales {
         this.setDefault("local.delimiter", File.separator);
         this.setDefault("local.temporaryfiles.shortening.threshold", String.valueOf(240));
 
+        this.setDefault("application.identifier", "io.cyberduck");
         this.setDefault("application.name", "Cyberduck");
         this.setDefault("application.container.name", "duck");
+        this.setDefault("application.container.teamidentifier", "G69SCX94XU");
         this.setDefault("application.datafolder.name", "duck");
 
         /*
@@ -751,6 +750,7 @@ public abstract class Preferences implements Locales {
         this.setDefault("azure.listing.chunksize", String.valueOf(1000));
         this.setDefault("azure.upload.md5", String.valueOf(false));
         this.setDefault("azure.upload.snapshot", String.valueOf(false));
+        this.setDefault("azure.upload.blobtype", "APPEND_BLOB");
 
         // Legacy authentication
 //        this.setDefault("openstack.authentication.context", "/v1.0");
@@ -938,11 +938,15 @@ public abstract class Preferences implements Locales {
           Retry to connect after a I/O failure automatically
          */
         this.setDefault("connection.retry", String.valueOf(1));
+        // Specific setting for transfer worker
+        this.setDefault("transfer.connection.retry", String.valueOf(1));
         this.setDefault("connection.retry.max", String.valueOf(20));
         /*
           In seconds
          */
         this.setDefault("connection.retry.delay", String.valueOf(0));
+        // Specific setting for transfer worker
+        this.setDefault("transfer.connection.retry.delay", String.valueOf(0));
         this.setDefault("connection.retry.backoff.enable", String.valueOf(false));
 
         /**
@@ -960,6 +964,10 @@ public abstract class Preferences implements Locales {
           java.net.preferIPv6Addresses
          */
         this.setDefault("connection.dns.ipv6", String.valueOf(false));
+        // Ticket #2539
+        if(this.getBoolean("connection.dns.ipv6")) {
+            System.setProperty("java.net.preferIPv6Addresses", String.valueOf(true));
+        }
 
         /*
           Read proxy settings from system preferences
@@ -977,8 +985,18 @@ public abstract class Preferences implements Locales {
         this.setDefault(String.format("connection.unsecure.warning.%s", Scheme.ftp), String.valueOf(true));
         this.setDefault(String.format("connection.unsecure.warning.%s", Scheme.http), String.valueOf(true));
 
-        this.setDefault("connection.ssl.provider.conscrypt", String.valueOf(true));
         this.setDefault("connection.ssl.provider.bouncycastle.position", String.valueOf(1));
+        // Failure loading default key store with bouncycastle provider
+        System.setProperty("javax.net.ssl.trustStoreType", "JKS");
+        // Register bouncy castle as preferred provider. Used in Cyptomator, SSL and SSH
+        final int position = this.getInteger("connection.ssl.provider.bouncycastle.position");
+        final BouncyCastleProvider provider = new BouncyCastleProvider();
+        // Add missing factory. http://bouncy-castle.1462172.n4.nabble.com/Keychain-issue-as-of-version-1-53-follow-up-tc4659509.html
+        provider.put("Alg.Alias.SecretKeyFactory.PBE", "PBEWITHSHAAND3-KEYTRIPLEDES-CBC");
+        if(log.isInfoEnabled()) {
+            log.info(String.format("Install provider %s at position %d", provider, position));
+        }
+        Security.insertProviderAt(provider, position);
         this.setDefault("connection.ssl.protocols", "TLSv1.2,TLSv1.1,TLSv1");
         this.setDefault("connection.ssl.cipher.blacklist", StringUtils.EMPTY);
 
@@ -1096,14 +1114,20 @@ public abstract class Preferences implements Locales {
     }
 
     protected void setLogging() {
+        this.setLogging(this.getProperty("logging"));
+    }
+
+    /**
+     * Reconfigure logging configuration
+     *
+     * @param level Log level
+     */
+    public void setLogging(final String level) {
+        this.setProperty("logging", level);
         // Call only once during initialization time of your application
         SLF4JBridgeHandler.removeHandlersForRootLogger();
         SLF4JBridgeHandler.install();
-
-        this.resetLogging();
-    }
-
-    private void resetLogging() {
+        // Apply default configuration
         final URL configuration;
         final String file = this.getDefault("logging.config");
         if(null == file) {
@@ -1117,14 +1141,8 @@ public abstract class Preferences implements Locales {
         if(null != configuration) {
             DOMConfigurator.configure(configuration);
         }
-        else {
-            // Default if no logging configuration is found
-            root.setLevel(Level.ERROR);
-        }
-        if(StringUtils.isNotBlank(this.getProperty("logging"))) {
-            // Allow to override default logging level
-            root.setLevel(Level.toLevel(this.getProperty("logging"), Level.ERROR));
-        }
+        // Allow to override default logging level
+        root.setLevel(Level.toLevel(level, Level.ERROR));
         // Map logging level to pass through bridge
         final ImmutableMap<Level, java.util.logging.Level> map = new ImmutableMap.Builder<Level, java.util.logging.Level>()
             .put(Level.ALL, java.util.logging.Level.ALL)
@@ -1144,14 +1162,6 @@ public abstract class Preferences implements Locales {
                 java.util.logging.Logger.getLogger(logger.getName()).setLevel(map.get(logger.getLevel()));
             }
         }
-    }
-
-    public void enableDebugLogging() {
-        Logger.getRootLogger().setLevel(Level.DEBUG);
-    }
-
-    public void disableDebugLogging() {
-        this.resetLogging();
     }
 
     /**
@@ -1343,16 +1353,14 @@ public abstract class Preferences implements Locales {
     public abstract void load();
 
     /**
-     * @return The preferred locale of all localizations available
-     * in this application bundle
+     * @return The preferred locale of all localizations available in this application bundle
      */
     public String locale() {
         return this.applicationLocales().iterator().next();
     }
 
     /**
-     * The localizations available in this application bundle
-     * sorted by preference by the user.
+     * The localizations available in this application bundle sorted by preference by the user.
      *
      * @return Available locales in application bundle
      */

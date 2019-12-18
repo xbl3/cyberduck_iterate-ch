@@ -38,6 +38,7 @@ import ch.cyberduck.core.Local;
 import ch.cyberduck.core.LocalFactory;
 import ch.cyberduck.core.LocaleFactory;
 import ch.cyberduck.core.Path;
+import ch.cyberduck.core.PathAttributes;
 import ch.cyberduck.core.Permission;
 import ch.cyberduck.core.Scheme;
 import ch.cyberduck.core.UserDateFormatterFactory;
@@ -403,7 +404,7 @@ public abstract class BrowserTableDataSource extends ProxyController implements 
                 }
                 final Map<Path, Path> files = new HashMap<Path, Path>();
                 for(Path next : pasteboard) {
-                    final Path renamed = new Path(destination, next.getName(), next.getType(), next.attributes().withVersionId(null));
+                    final Path renamed = new Path(destination, next.getName(), next.getType(), new PathAttributes(next.attributes()).withVersionId(null));
                     files.put(next, renamed);
                 }
                 if(pasteboard.getBookmark().compareTo(controller.getSession().getHost()) != 0) {
@@ -578,8 +579,10 @@ public abstract class BrowserTableDataSource extends ProxyController implements 
                 if(event != null) {
                     NSPoint dragPosition = view.convertPoint_fromView(event.locationInWindow(), null);
                     NSRect imageRect = new NSRect(new NSPoint(dragPosition.x.doubleValue() - 16, dragPosition.y.doubleValue() - 16), new NSSize(32, 32));
-                    view.dragPromisedFilesOfTypes(NSMutableArray.arrayWithObject(fileTypes.iterator().next()), imageRect, this.id(), true, event);
-                    // @see http://www.cocoabuilder.com/archive/message/cocoa/2003/5/15/81424
+                    if(!view.dragPromisedFilesOfTypes(NSMutableArray.arrayWithObject(fileTypes.iterator().next()), imageRect, this.id(), true, event)) {
+                        log.warn(String.format("Failure for drag promise operation of %s", event));
+                        return false;
+                    }
                     return true;
                 }
             }

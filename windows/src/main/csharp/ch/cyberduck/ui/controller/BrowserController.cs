@@ -58,6 +58,9 @@ using Exception = System.Exception;
 using Path = ch.cyberduck.core.Path;
 using String = System.String;
 using StringBuilder = System.Text.StringBuilder;
+using X509Certificate = java.security.cert.X509Certificate;
+using X509Certificate2 = System.Security.Cryptography.X509Certificates.X509Certificate2;
+using X509Certificate2UI = System.Security.Cryptography.X509Certificates.X509Certificate2UI;
 
 namespace Ch.Cyberduck.Ui.Controller
 {
@@ -1059,7 +1062,7 @@ namespace Ch.Cyberduck.Ui.Controller
                 IDictionary<Path, Path> files = new Dictionary<Path, Path>();
                 foreach (Path next in dropargs.SourceModels)
                 {
-                    Path renamed = new Path(destination, next.getName(), next.getType(), next.attributes().withVersionId(null));
+                    Path renamed = new Path(destination, next.getName(), next.getType(), new PathAttributes(next.attributes()).withVersionId(null));
                     files.Add(next, renamed);
                 }
                 if (files.Count > 0)
@@ -1150,10 +1153,16 @@ namespace Ch.Cyberduck.Ui.Controller
 
         private void View_Certificate()
         {
-            if (Session.getFeature(typeof(X509TrustManager)) != null)
+            X509TrustManager feature = (X509TrustManager)Session.getFeature(typeof(X509TrustManager));
+            if (feature != null)
             {
-                X509TrustManager feature = (X509TrustManager) Session.getFeature(typeof(X509TrustManager));
-                CertificateStoreFactory.get().display(Arrays.asList(feature.getAcceptedIssuers()));
+                List certificates = Arrays.asList(feature.getAcceptedIssuers());
+                if (certificates.isEmpty())
+                {
+                    return;
+                }
+                X509Certificate2 cert = SystemCertificateStore.ConvertCertificate(certificates.iterator().next() as X509Certificate);
+                X509Certificate2UI.DisplayCertificate(cert);
             }
         }
 
@@ -1578,7 +1587,7 @@ namespace Ch.Cyberduck.Ui.Controller
             for (int i = 0; i < _pasteboard.size(); i++)
             {
                 Path next = (Path) _pasteboard.get(i);
-                Path renamed = new Path(parent, next.getName(), next.getType(), next.attributes());
+                Path renamed = new Path(parent, next.getName(), next.getType(), new PathAttributes(next.attributes()));
                 files.Add(next, renamed);
             }
             _pasteboard.clear();

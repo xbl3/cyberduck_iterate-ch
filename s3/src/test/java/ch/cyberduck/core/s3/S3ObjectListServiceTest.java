@@ -31,6 +31,7 @@ import ch.cyberduck.core.transfer.TransferStatus;
 import ch.cyberduck.test.IntegrationTest;
 
 import org.jets3t.service.Jets3tProperties;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -78,6 +79,7 @@ public class S3ObjectListServiceTest extends AbstractS3Test {
     }
 
     @Test(expected = NotfoundException.class)
+    @Ignore
     public void testListNotFoundFolderMinio() throws Exception {
         final Host host = new Host(new S3Protocol(), "play.minio.io", 9000, new Credentials(
             "Q3AM3UQ867SPQQA43P2F", "zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG"
@@ -257,7 +259,7 @@ public class S3ObjectListServiceTest extends AbstractS3Test {
         final KeychainX509TrustManager trust = new KeychainX509TrustManager(new DefaultTrustManagerHostnameCallback(host),
             new DisabledCertificateStore() {
                 @Override
-                public boolean isTrusted(final String hostname, final List<X509Certificate> certificates) {
+                public boolean verify(final String hostname, final List<X509Certificate> certificates) {
                     assertEquals("ch.s3.amazonaws.com", hostname);
                     return true;
                 }

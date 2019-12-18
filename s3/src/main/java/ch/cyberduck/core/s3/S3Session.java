@@ -65,6 +65,7 @@ import ch.cyberduck.core.sts.STSCredentialsConfigurator;
 import ch.cyberduck.core.threading.CancelCallback;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.conn.util.InetAddressUtils;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
 import org.jets3t.service.Jets3tProperties;
@@ -91,15 +92,11 @@ public class S3Session extends HttpSession<RequestEntityRestStorageService> {
         = S3Protocol.AuthenticationHeaderSignatureVersion.getDefault(host.getProtocol());
 
     public S3Session(final Host host) {
-        super(host, S3Session.isAwsHostname(host.getHostname()) ?
-            new LaxHostnameDelegatingTrustManager(new DisabledX509TrustManager(), host.getHostname()) :
-            new ThreadLocalHostnameDelegatingTrustManager(new DisabledX509TrustManager(), host.getHostname()), new DefaultX509KeyManager());
+        super(host, new LaxHostnameDelegatingTrustManager(new DisabledX509TrustManager(), host.getHostname()), new DefaultX509KeyManager());
     }
 
     public S3Session(final Host host, final X509TrustManager trust, final X509KeyManager key) {
-        super(host, S3Session.isAwsHostname(host.getHostname()) ?
-            new LaxHostnameDelegatingTrustManager(trust, host.getHostname()) :
-            new ThreadLocalHostnameDelegatingTrustManager(trust, host.getHostname()), key);
+        super(host, new LaxHostnameDelegatingTrustManager(trust, host.getHostname()), key);
     }
 
     @Override
@@ -158,7 +155,13 @@ public class S3Session extends HttpSession<RequestEntityRestStorageService> {
         }
         else {
             configuration.setProperty("s3service.s3-endpoint", host.getHostname());
-            configuration.setProperty("s3service.disable-dns-buckets", String.valueOf(true));
+            if(InetAddressUtils.isIPv4Address(host.getHostname()) || InetAddressUtils.isIPv6Address(host.getHostname())) {
+                configuration.setProperty("s3service.disable-dns-buckets", String.valueOf(true));
+            }
+            else {
+                configuration.setProperty("s3service.disable-dns-buckets",
+                    String.valueOf(preferences.getBoolean("s3.bucket.virtualhost.disable")));
+            }
         }
         configuration.setProperty("s3service.enable-storage-classes", String.valueOf(true));
         if(StringUtils.isNotBlank(host.getProtocol().getContext())) {
@@ -194,7 +197,8 @@ public class S3Session extends HttpSession<RequestEntityRestStorageService> {
         final HttpClientBuilder configuration = builder.build(proxy, this, prompt);
         // Only for AWS
         if(S3Session.isAwsHostname(host.getHostname())) {
-            configuration.setServiceUnavailableRetryStrategy(new S3TokenExpiredResponseInterceptor(this, prompt));
+            configuration.setServiceUnavailableRetryStrategy(new S3TokenExpiredResponseInterceptor(this,
+                new ThreadLocalHostnameDelegatingTrustManager(trust, host.getHostname()), key, prompt));
         }
         return new RequestEntityRestStorageService(this, this.configure(), configuration);
     }
@@ -217,7 +221,8 @@ public class S3Session extends HttpSession<RequestEntityRestStorageService> {
             // Only for AWS
             if(isAwsHostname(host.getHostname())) {
                 // Try auto-configure
-                credentials = new STSCredentialsConfigurator(prompt).configure(host);
+                credentials = new STSCredentialsConfigurator(
+                    new ThreadLocalHostnameDelegatingTrustManager(trust, host.getHostname()), key, prompt).configure(host);
             }
             else {
                 credentials = host.getCredentials();
@@ -333,7 +338,7 @@ public class S3Session extends HttpSession<RequestEntityRestStorageService> {
         if(type == Encryption.class) {
             // Only for AWS
             if(S3Session.isAwsHostname(host.getHostname())) {
-                return (T) new KMSEncryptionFeature(this);
+                return (T) new KMSEncryptionFeature(this, trust, key);
             }
             return null;
         }
@@ -343,12 +348,12 @@ public class S3Session extends HttpSession<RequestEntityRestStorageService> {
         if(type == IdentityConfiguration.class) {
             // Only for AWS
             if(S3Session.isAwsHostname(host.getHostname())) {
-                return (T) new AmazonIdentityConfiguration(host);
+                return (T) new AmazonIdentityConfiguration(host, trust, key);
             }
             return null;
         }
         if(type == DistributionConfiguration.class) {
-            return (T) new WebsiteCloudFrontDistributionConfiguration(this, distributions);
+            return (T) new WebsiteCloudFrontDistributionConfiguration(this, trust, key, distributions);
         }
         if(type == UrlProvider.class) {
             return (T) new S3UrlProvider(this);

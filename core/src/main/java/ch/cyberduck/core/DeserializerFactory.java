@@ -27,8 +27,6 @@ import java.lang.reflect.InvocationTargetException;
 
 public class DeserializerFactory<T> extends Factory<Deserializer> {
 
-    private static final DeserializerFactory factory = new DeserializerFactory<>();
-
     public DeserializerFactory() {
         super("factory.deserializer.class");
     }
@@ -48,6 +46,6 @@ public class DeserializerFactory<T> extends Factory<Deserializer> {
     }
 
     public static <T> Deserializer<T> get(final T dict) {
-        return factory.create(dict);
+        return new DeserializerFactory<>().create(dict);
     }
 }

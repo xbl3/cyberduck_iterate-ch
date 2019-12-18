@@ -26,9 +26,11 @@ import ch.cyberduck.binding.WindowController;
 import ch.cyberduck.binding.application.*;
 import ch.cyberduck.binding.foundation.NSArray;
 import ch.cyberduck.binding.foundation.NSAttributedString;
+import ch.cyberduck.binding.foundation.NSData;
 import ch.cyberduck.binding.foundation.NSDictionary;
 import ch.cyberduck.binding.foundation.NSEnumerator;
 import ch.cyberduck.binding.foundation.NSIndexSet;
+import ch.cyberduck.binding.foundation.NSMutableArray;
 import ch.cyberduck.binding.foundation.NSNotification;
 import ch.cyberduck.binding.foundation.NSNotificationCenter;
 import ch.cyberduck.binding.foundation.NSObject;
@@ -47,10 +49,13 @@ import ch.cyberduck.core.features.Location;
 import ch.cyberduck.core.features.Move;
 import ch.cyberduck.core.features.Scheduler;
 import ch.cyberduck.core.features.Touch;
+import ch.cyberduck.core.keychain.SFCertificatePanel;
+import ch.cyberduck.core.keychain.SecurityFunctions;
 import ch.cyberduck.core.local.Application;
 import ch.cyberduck.core.local.BrowserLauncherFactory;
 import ch.cyberduck.core.local.DisabledApplicationQuitCallback;
 import ch.cyberduck.core.local.TemporaryFileServiceFactory;
+import ch.cyberduck.core.logging.UnifiedSystemLogTranscriptListener;
 import ch.cyberduck.core.pasteboard.HostPasteboard;
 import ch.cyberduck.core.pasteboard.PathPasteboard;
 import ch.cyberduck.core.pasteboard.PathPasteboardFactory;
@@ -118,6 +123,7 @@ import ch.cyberduck.ui.cocoa.toolbar.BrowserToolbarValidator;
 import ch.cyberduck.ui.cocoa.view.BookmarkCell;
 import ch.cyberduck.ui.cocoa.view.OutlineCell;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -148,8 +154,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-public class BrowserController extends WindowController
-    implements ProgressListener, TranscriptListener, NSToolbar.Delegate, NSMenu.Validation, QLPreviewPanelController {
+public class BrowserController extends WindowController implements NSToolbar.Delegate, NSMenu.Validation, QLPreviewPanelController {
     private static final Logger log = Logger.getLogger(BrowserController.class);
 
     private static NSPoint cascade = new NSPoint(0, 0);
@@ -184,16 +189,14 @@ public class BrowserController extends WindowController
         = PreferencesFactory.get();
 
     private final Navigation navigation = new Navigation();
+    private final TranscriptListener transcript =
+        Factory.Platform.osversion.matches("10\\.(8|9|10|11).*") ? new DisabledTranscriptListener() : new UnifiedSystemLogTranscriptListener();
 
     /**
      * Connection pool
      */
     private SessionPool pool = SessionPool.DISCONNECTED;
     private Path workdir;
-    /**
-     * Log Drawer
-     */
-    private TranscriptController transcript;
     /**
      * Hide files beginning with '.'
      */
@@ -230,8 +233,6 @@ public class BrowserController extends WindowController
     private AbstractBrowserTableDelegate browserListViewDelegate;
     @Outlet
     private NSToolbar toolbar;
-    @Outlet
-    private NSDrawer logDrawer;
     @Outlet
     private NSTitlebarAccessoryViewController accessoryView;
     @Outlet
@@ -378,9 +379,6 @@ public class BrowserController extends WindowController
         this.window.setToolbar(toolbar);
         this._updateBrowserColumns(browserListView, browserListViewDelegate);
         this._updateBrowserColumns(browserOutlineView, browserOutlineViewDelegate);
-        if(preferences.getBoolean("browser.transcript.open")) {
-            this.logDrawer.open();
-        }
         if(LicenseFactory.find().equals(LicenseFactory.EMPTY_LICENSE)) {
             this.addDonateWindowTitle();
         }
@@ -711,35 +709,6 @@ public class BrowserController extends WindowController
             bookmarks.add(0, duplicate);
         }
         return true;
-    }
-
-    @Action
-    public void drawerDidOpen(NSNotification notification) {
-        preferences.setProperty("browser.transcript.open", true);
-    }
-
-    @Action
-    public void drawerDidClose(NSNotification notification) {
-        preferences.setProperty("browser.transcript.open", false);
-        transcript.clear();
-    }
-
-    @Action
-    public NSSize drawerWillResizeContents_toSize(final NSDrawer sender, final NSSize contentSize) {
-        return contentSize;
-    }
-
-    @Action
-    public void setLogDrawer(NSDrawer drawer) {
-        this.logDrawer = drawer;
-        this.transcript = new TranscriptController() {
-            @Override
-            public boolean isOpen() {
-                return logDrawer.state() == NSDrawer.OpenState;
-            }
-        };
-        this.logDrawer.setContentView(this.transcript.getLogView());
-        this.logDrawer.setDelegate(this.id());
     }
 
     @Action
@@ -2051,11 +2020,6 @@ public class BrowserController extends WindowController
     }
 
     @Action
-    public void toggleLogDrawer(final ID sender) {
-        this.logDrawer.toggle(this.id());
-    }
-
-    @Action
     public void setStatusSpinner(NSProgressIndicator statusSpinner) {
         this.statusSpinner = statusSpinner;
         this.statusSpinner.setDisplayedWhenStopped(false);
@@ -2141,8 +2105,8 @@ public class BrowserController extends WindowController
     }
 
     @Override
-    public void log(final Type request, final String message) {
-        transcript.log(request, message);
+    public void log(final Type type, final String message) {
+        transcript.log(type, message);
     }
 
     @Action
@@ -2156,12 +2120,29 @@ public class BrowserController extends WindowController
     @Action
     public void securityLabelClicked(final ID sender) {
         final List<X509Certificate> certificates = Arrays.asList(pool.getFeature(X509TrustManager.class).getAcceptedIssuers());
+        if(certificates.isEmpty()) {
+            return;
+        }
         try {
-            CertificateStoreFactory.get(this).display(certificates);
+            final NSMutableArray certs = NSMutableArray.arrayWithCapacity(new NSUInteger(certificates.size()));
+            for(X509Certificate certificate : certificates) {
+                certs.addObject(SecurityFunctions.library.SecCertificateCreateWithData(null,
+                    NSData.dataWithBase64EncodedString(Base64.encodeBase64String(certificate.getEncoded()))));
+            }
+            final SFCertificatePanel panel = SFCertificatePanel.sharedCertificatePanel();
+            panel.setShowsHelp(false);
+            // Implementation of this delegate method is optional
+            panel.beginSheetForWindow_modalDelegate_didEndSelector_contextInfo_certificates_showGroup(
+                this.window, this.id(), Foundation.selector("certificateSheetDidEnd:returnCode:contextInfo:"), null, certs, true);
         }
         catch(CertificateException e) {
             log.warn(String.format("Failure decoding certificate %s", e.getMessage()));
         }
+    }
+
+    @Action
+    public void certificateSheetDidEnd_returnCode_contextInfo(NSWindow sheet, NSInteger returnCode, NSObject contextInfo) {
+        //
     }
 
     @Action
@@ -2957,7 +2938,7 @@ public class BrowserController extends WindowController
             final Map<Path, Path> files = new HashMap<Path, Path>();
             final Path parent = workdir;
             for(final Path next : pasteboard) {
-                Path renamed = new Path(parent, next.getName(), next.getType(), next.attributes());
+                Path renamed = new Path(parent, next.getName(), next.getType(), new PathAttributes(next.attributes()));
                 files.put(next, renamed);
             }
             pasteboard.clear();
@@ -3104,7 +3085,6 @@ public class BrowserController extends WindowController
         if(log.isDebugEnabled()) {
             log.debug(String.format("Mount session for %s", bookmark));
         }
-        transcript.clear();
         this.unmount(new Runnable() {
             @Override
             public void run() {

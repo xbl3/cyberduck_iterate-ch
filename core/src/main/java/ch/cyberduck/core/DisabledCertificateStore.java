@@ -26,13 +26,8 @@ import java.util.List;
 public class DisabledCertificateStore implements CertificateStore {
 
     @Override
-    public boolean isTrusted(final String hostname, List<X509Certificate> certificates) {
+    public boolean verify(final String hostname, List<X509Certificate> certificates) {
         return true;
-    }
-
-    @Override
-    public boolean display(List<X509Certificate> certificates) {
-        return false;
     }
 
     @Override

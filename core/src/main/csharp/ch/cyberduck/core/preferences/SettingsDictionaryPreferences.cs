@@ -140,11 +140,12 @@ namespace Ch.Cyberduck.Core.Preferences
             return getProperty("application.language");
         }
 
-        protected override void post()
+        public override void setLogging(String level)
         {
-            base.post();
+            base.setLogging(level);
+
             Logger root = Logger.getRootLogger();
-            var fileName = Path.Combine(SupportDirectoryFinderFactory.get().find().getAbsolute(),
+            var fileName = Path.Combine(new RoamingSupportDirectoryFinder().find().getAbsolute(),
                 getProperty("application.name").ToLower().Replace(" ", "") + ".log");
             RollingFileAppender appender = new RollingFileAppender(new PatternLayout(@"%d [%t] %-5p %c - %m%n"),
                 fileName, true);
@@ -156,7 +157,6 @@ namespace Ch.Cyberduck.Core.Preferences
             {
                 root.setLevel(Level.DEBUG);
             }
-            ApplyGlobalConfig();
         }
 
         protected override void setDefaults()
@@ -294,7 +294,6 @@ namespace Ch.Cyberduck.Core.Preferences
             this.setDefault("local.delimiter", "\\");
             this.setDefault("local.normalize.tilde", false.ToString());
 
-            this.setDefault("connection.ssl.provider.conscrypt", false.ToString());
             // SSL Keystore
             // Add mscapi security provider
             Security.addProvider(new SunMSCAPI());
@@ -304,6 +303,8 @@ namespace Ch.Cyberduck.Core.Preferences
             // Override secure random strong algorithm. Outputs bytes from the Windows CryptGenRandom() API
             this.setDefault("connection.ssl.securerandom.algorithm", "Windows-PRNG");
             this.setDefault("connection.ssl.securerandom.provider", "SunMSCAPI");
+            // Set secure random algorithms for BC
+            Security.setProperty("securerandom.strongAlgorithms", "Windows-PRNG:SunMSCAPI,SHA1PRNG:SUN");
 
             // Enable Integrated Windows Authentication
             this.setDefault("connection.proxy.windows.authentication.enable", true.ToString());
@@ -337,28 +338,6 @@ namespace Ch.Cyberduck.Core.Preferences
             if (Utils.IsRunningAsUWP)
             {
                 SetUWPDefaults();
-            }
-        }
-
-        private void ApplyGlobalConfig()
-        {
-            var config = Path.Combine(SupportDirectoryFinderFactory.get().find().getAbsolute(),
-                "default.properties");
-            if (File.Exists(config))
-            {
-                try
-                {
-                    var properties = new java.util.Properties();
-                    properties.load(new FileInputStream(config));
-                    foreach (var key in Utils.ConvertFromJavaList<String>(properties.keySet()))
-                    {
-                        setDefault(key, properties.getProperty(key));
-                    }
-                }
-                catch (Exception e)
-                {
-                    Log.warn($"Failure while reading {config}", e);
-                }
             }
         }
 

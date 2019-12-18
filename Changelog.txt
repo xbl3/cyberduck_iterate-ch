@@ -1,6 +1,28 @@
 Cyberduck
 https://cyberduck.io/
 
+7.2.3
+- [Bugfix] Cannot open link to documents in Google Docs (Google Drive)
+
+7.2.2
+- [Bugfix] Crash opening connection (macOS 10.[9-11]) (#10892)
+- [Bugfix] Interoperability with providers only supporting path-style requests (S3) (#10888)
+- [Bugfix] Display certificates as sheet in browser window (macOS) (#10897)
+- [Bugfix] Recursive search shows no result (#10799)
+- [Bugfix] Error moving file to encrypted vault (#10803)
+
+7.2.1
+- [Bugfix] Failure to open application on Windows 7+ (Windows)
+
+7.2.0
+- [Bugfix] Failure validating hostname when connecting through HTTP proxy
+- [Bugfix] MD5 mismatch error for uploads (Alibaba Cloud Object Storage Service) (#10879)
+- [Bugfix] Deprecated path-style request usage for (AWS GovCloud) (#10824)
+- [Bugfix] Default to use virtual hosted style to access bucket contents for third party S3 providers
+- [Bugfix] Optimize MD5 checksum calculation (S3) (#10278)
+- [Bugfix] Reload directory contents after editing file
+- [Bugfix] Failure replacing objects with blob type set to block (Azure)
+
 7.1.2
 - [Bugfix] Folder showing no more than 1000 files (S3) (#10811)
 - [Bugfix] Failure deleting folder recursively (FTP)

@@ -58,7 +58,7 @@ public class BrickPairingSchedulerFeature {
     private final String token;
     private final Host host;
     private final CancelCallback cancel;
-    protected final ScheduledThreadPool scheduler = new ScheduledThreadPool();
+    private final ScheduledThreadPool scheduler = new ScheduledThreadPool();
 
     private Preferences preferences = PreferencesFactory.get();
 
@@ -110,8 +110,7 @@ public class BrickPairingSchedulerFeature {
                 public JsonObject handleEntity(final HttpEntity entity) throws IOException {
                     final ByteArrayOutputStream out = new ByteArrayOutputStream();
                     IOUtils.copy(entity.getContent(), out);
-                    final JsonParser parser = new JsonParser();
-                    return parser.parse(new InputStreamReader(new ByteArrayInputStream(out.toByteArray()))).getAsJsonObject();
+                    return JsonParser.parseReader(new InputStreamReader(new ByteArrayInputStream(out.toByteArray()))).getAsJsonObject();
                 }
             });
             if(json.has("nickname")) {

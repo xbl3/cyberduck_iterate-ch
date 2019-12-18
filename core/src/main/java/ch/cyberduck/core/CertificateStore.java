@@ -31,15 +31,8 @@ public interface CertificateStore {
      * @param certificates Certificate chain
      * @return True if trusted in Keychain
      */
-    boolean isTrusted(String hostname, List<X509Certificate> certificates)
-            throws CertificateException;
-
-    /**
-     * @param certificates X.509 certificates
-     * @return False if display is not possible
-     */
-    boolean display(List<X509Certificate> certificates)
-            throws CertificateException;
+    boolean verify(String hostname, List<X509Certificate> certificates)
+        throws CertificateException;
 
     /**
      * Prompt user for client certificate

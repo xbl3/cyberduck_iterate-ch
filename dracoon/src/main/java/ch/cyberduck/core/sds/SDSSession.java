@@ -52,7 +52,6 @@ import ch.cyberduck.core.sds.io.swagger.client.model.UserKeyPairContainer;
 import ch.cyberduck.core.sds.provider.HttpComponentsProvider;
 import ch.cyberduck.core.sds.triplecrypt.TripleCryptExceptionMappingService;
 import ch.cyberduck.core.sds.triplecrypt.TripleCryptKeyPair;
-import ch.cyberduck.core.ssl.ThreadLocalHostnameDelegatingTrustManager;
 import ch.cyberduck.core.ssl.X509KeyManager;
 import ch.cyberduck.core.ssl.X509TrustManager;
 import ch.cyberduck.core.threading.CancelCallback;
@@ -76,6 +75,8 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.dracoon.sdk.crypto.CryptoException;
 import com.dracoon.sdk.crypto.model.UserKeyPair;
@@ -89,6 +90,8 @@ public class SDSSession extends HttpSession<SDSApiClient> {
 
     public static final String SDS_AUTH_TOKEN_HEADER = "X-Sds-Auth-Token";
     public static final int DEFAULT_CHUNKSIZE = 16;
+
+    private static final String VERSION_REGEX = "(([0-9]+)\\.([0-9]+)\\.([0-9]+)).*";
 
     protected SDSErrorResponseInterceptor retryHandler;
     protected OAuth2RequestInterceptor authorizationService;
@@ -106,7 +109,7 @@ public class SDSSession extends HttpSession<SDSApiClient> {
     private final SDSNodeIdProvider nodeid = new SDSNodeIdProvider(this);
 
     public SDSSession(final Host host, final X509TrustManager trust, final X509KeyManager key) {
-        super(host, new ThreadLocalHostnameDelegatingTrustManager(trust, host.getHostname()), key);
+        super(host, trust, key);
     }
 
     @Override
@@ -171,8 +174,17 @@ public class SDSSession extends HttpSession<SDSApiClient> {
         // The provided token is valid for two hours, every usage resets this period to two full hours again. Logging off invalidates the token.
         switch(SDSProtocol.Authorization.valueOf(host.getProtocol().getAuthorization())) {
             case oauth:
-                if(new Version(StringUtils.removePattern(this.softwareVersion().getRestApiVersion(), "-.*")).compareTo(new Version("4.15.0")) >= 0) {
-                    authorizationService.withRedirectUri(CYBERDUCK_REDIRECT_URI);
+                if("x-dracoon-action:oauth".equals(CYBERDUCK_REDIRECT_URI)) {
+                    final SoftwareVersionData softwareVersionData = this.softwareVersion();
+                    Matcher matcher = Pattern.compile(VERSION_REGEX).matcher(softwareVersionData.getRestApiVersion());
+                    if(matcher.matches()) {
+                        if(new Version(matcher.group(1)).compareTo(new Version("4.15.0")) >= 0) {
+                            authorizationService.withRedirectUri(CYBERDUCK_REDIRECT_URI);
+                        }
+                    }
+                    else {
+                        log.warn(String.format("Failure to parse software version %s", softwareVersionData));
+                    }
                 }
                 authorizationService.setTokens(authorizationService.authorize(host, controller, cancel));
                 break;
