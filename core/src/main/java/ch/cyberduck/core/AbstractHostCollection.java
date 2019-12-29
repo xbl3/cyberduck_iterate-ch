@@ -171,7 +171,7 @@ public abstract class AbstractHostCollection extends Collection<Host> implements
      */
     public Map<String, List<Host>> groups(final HostFilter filter) {
         final Map<String, List<Host>> labels = new HashMap<>();
-        for(Host host : this.stream().filter(filter).collect(Collectors.toList())) {
+        for(Host host : this.stream().filter(filter::accept).collect(Collectors.toList())) {
             if(host.getLabels().isEmpty()) {
                 final List<Host> list = labels.getOrDefault(StringUtils.EMPTY, new ArrayList<>());
                 list.add(host);

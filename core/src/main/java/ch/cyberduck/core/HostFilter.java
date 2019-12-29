@@ -18,15 +18,8 @@ package ch.cyberduck.core;
  *  dkocher@cyberduck.ch
  */
 
-import java.util.function.Predicate;
-
-public interface HostFilter extends Predicate<Host> {
+public interface HostFilter {
     boolean accept(Host host);
-
-    @Override
-    default boolean test(Host host) {
-        return this.accept(host);
-    }
 
     HostFilter NONE = new HostFilter() {
         @Override
