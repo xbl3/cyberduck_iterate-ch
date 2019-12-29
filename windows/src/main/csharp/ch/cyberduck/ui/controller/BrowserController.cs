@@ -3235,11 +3235,6 @@ namespace Ch.Cyberduck.Ui.Controller
                 _searchString = searchString;
             }
 
-            public bool test(Host host)
-            {
-                return accept(host);
-            }
-
             public bool accept(Host host)
             {
                 return BookmarkNameProvider.toString(host).ToLower().Contains(_searchString.ToLower()) ||
