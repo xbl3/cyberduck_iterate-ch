@@ -18,10 +18,14 @@
     <parent>
         <groupId>ch.cyberduck</groupId>
         <artifactId>parent</artifactId>
-        <version>7.2.5-SNAPSHOT</version>
+        <version>7.2.7-SNAPSHOT</version>
     </parent>
     <artifactId>webdav</artifactId>
     <packaging>jar</packaging>
+
+    <properties>
+        <sardine-version>5.13</sardine-version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -39,7 +43,7 @@
         <dependency>
             <groupId>ch.iterate.webdav</groupId>
             <artifactId>sardine</artifactId>
-            <version>5.12</version>
+            <version>${sardine-version}</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jaxb</groupId>

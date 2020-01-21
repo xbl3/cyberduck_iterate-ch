@@ -26,7 +26,6 @@ import ch.cyberduck.binding.foundation.NSLocale;
 import ch.cyberduck.binding.foundation.NSObject;
 import ch.cyberduck.binding.foundation.NSString;
 import ch.cyberduck.binding.foundation.NSUserDefaults;
-import ch.cyberduck.core.Factory;
 import ch.cyberduck.core.cache.LRUCache;
 import ch.cyberduck.core.local.FinderLocal;
 import ch.cyberduck.core.sparkle.Sandbox;
@@ -198,14 +197,16 @@ public class UserDefaultsPreferences extends DefaultPreferences {
         this.setDefault("bookmark.import.fetch.location", "~/Library/Preferences/com.fetchsoftworks.Fetch.Shortcuts.plist");
         this.setDefault("bookmark.import.flow.location", "~/Library/Application Support/Flow/Bookmarks.plist");
         this.setDefault("bookmark.import.interarchy.location", "~/Library/Application Support/Interarchy/Bookmarks.plist");
-        this.setDefault("bookmark.import.transmit.location", "~/Library/Preferences/com.panic.Transmit.plist");
+        this.setDefault("bookmark.import.transmit3.location", "~/Library/Preferences/com.panic.Transmit.plist");
         this.setDefault("bookmark.import.transmit4.location", "~/Library/Application Support/Transmit/Favorites/Favorites.xml");
+        this.setDefault("bookmark.import.transmit5.location", "~/Library/Application Support/Transmit/Metadata");
         this.setDefault("bookmark.import.crossftp.location", "~/.crossftp/sites.xml");
         this.setDefault("bookmark.import.fireftp.location", "~/Library/Application Support/Firefox/Profiles");
         this.setDefault("bookmark.import.expandrive3.location", "~/Library/Application Support/ExpanDrive/favorites.js");
         this.setDefault("bookmark.import.expandrive4.location", "~/Library/Application Support/ExpanDrive/expandrive4.favorites.js");
         this.setDefault("bookmark.import.expandrive5.location", "~/Library/Application Support/ExpanDrive/expandrive5.favorites.js");
         this.setDefault("bookmark.import.expandrive6.location", "~/Library/Application Support/ExpanDrive/expandrive6.favorites.js");
+        this.setDefault("bookmark.import.cloudmounter.location", "~/Library/Preferences/com.eltima.cloudmounter.plist");
         if(new FinderLocal("~/Downloads").exists()) {
             // For 10.5+ this usually exists and should be preferrred
             this.setDefault("queue.download.folder", "~/Downloads");
@@ -213,7 +214,7 @@ public class UserDefaultsPreferences extends DefaultPreferences {
         else {
             this.setDefault("queue.download.folder", "~/Desktop");
         }
-        this.setDefault("browser.filesize.decimal", String.valueOf(!Factory.Platform.osversion.matches("10\\.5.*")));
+        this.setDefault("browser.filesize.decimal", String.valueOf(true));
 
         // SSL Keystore
         this.setDefault("connection.ssl.keystore.type", "KeychainStore");

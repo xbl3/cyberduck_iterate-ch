@@ -18,7 +18,7 @@
     <parent>
         <groupId>ch.cyberduck</groupId>
         <artifactId>parent</artifactId>
-        <version>7.2.5-SNAPSHOT</version>
+        <version>7.2.7-SNAPSHOT</version>
     </parent>
     <artifactId>osx</artifactId>
     <packaging>jar</packaging>
@@ -283,13 +283,13 @@
                             <dependency>
                                 <groupId>org.codehaus.groovy</groupId>
                                 <artifactId>groovy-all</artifactId>
-                                <version>2.5.8</version>
+                                <version>2.5.9</version>
                                 <type>pom</type>
                             </dependency>
                             <dependency>
                                 <groupId>org.codehaus.groovy</groupId>
                                 <artifactId>groovy-dateutil</artifactId>
-                                <version>2.5.8</version>
+                                <version>2.5.9</version>
                             </dependency>
                         </dependencies>
                     </plugin>

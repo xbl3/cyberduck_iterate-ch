@@ -55,18 +55,7 @@ import ch.cyberduck.core.bonjour.RendezvousFactory;
 import ch.cyberduck.core.exception.AccessDeniedException;
 import ch.cyberduck.core.exception.BackgroundException;
 import ch.cyberduck.core.exception.HostParserException;
-import ch.cyberduck.core.importer.CrossFtpBookmarkCollection;
-import ch.cyberduck.core.importer.Expandrive3BookmarkCollection;
-import ch.cyberduck.core.importer.Expandrive4BookmarkCollection;
-import ch.cyberduck.core.importer.Expandrive5BookmarkCollection;
-import ch.cyberduck.core.importer.Expandrive6BookmarkCollection;
-import ch.cyberduck.core.importer.FetchBookmarkCollection;
-import ch.cyberduck.core.importer.FilezillaBookmarkCollection;
-import ch.cyberduck.core.importer.FireFtpBookmarkCollection;
-import ch.cyberduck.core.importer.FlowBookmarkCollection;
-import ch.cyberduck.core.importer.InterarchyBookmarkCollection;
-import ch.cyberduck.core.importer.ThirdpartyBookmarkCollection;
-import ch.cyberduck.core.importer.Transmit4BookmarkCollection;
+import ch.cyberduck.core.importer.*;
 import ch.cyberduck.core.local.Application;
 import ch.cyberduck.core.local.BrowserLauncherFactory;
 import ch.cyberduck.core.local.DefaultLocalDirectoryFeature;
@@ -133,20 +122,17 @@ public class MainController extends BundleController implements NSApplication.De
     private static final Logger log = Logger.getLogger(MainController.class);
 
     /**
-     * Apple event constants<br>
-     * **********************************************************************************************<br>
+     * Apple event constants<br> **********************************************************************************************<br>
      * <i>native declaration : /Developer/SDKs/MacOSX10.5.sdk/usr/include/AvailabilityMacros.h:117</i>
      */
     public static final int kInternetEventClass = 1196773964;
     /**
-     * Apple event constants<br>
-     * **********************************************************************************************<br>
+     * Apple event constants<br> **********************************************************************************************<br>
      * <i>native declaration : /Developer/SDKs/MacOSX10.5.sdk/usr/include/AvailabilityMacros.h:118</i>
      */
     public static final int kAEGetURL = 1196773964;
     /**
-     * Apple event constants<br>
-     * **********************************************************************************************<br>
+     * Apple event constants<br> **********************************************************************************************<br>
      * <i>native declaration : /Developer/SDKs/MacOSX10.5.sdk/usr/include/AvailabilityMacros.h:119</i>
      */
     public static final int kAEFetchURL = 1179996748;
@@ -784,23 +770,18 @@ public class MainController extends BundleController implements NSApplication.De
             public void callback(int returncode) {
                 if(DEFAULT_OPTION == returncode) {
                     final String selected = bookmarksPopup.selectedItem().representedObject();
-                    for(Host bookmark : bookmarks) {
-                        // Determine selected bookmark
-                        if(bookmark.getUuid().equals(selected)) {
-                            if(bookmark.equals(mount)) {
-                                // Use current working directory of browser for destination
-                                upload(bookmark, files, destination);
-                            }
-                            else {
-                                // No mounted browser
-                                if(StringUtils.isNotBlank(bookmark.getDefaultPath())) {
-                                    upload(bookmark, files, new Path(PathNormalizer.normalize(bookmark.getDefaultPath()), EnumSet.of(Path.Type.directory)));
-                                }
-                                else {
-                                    upload(bookmark, files, destination);
-                                }
-                            }
-                            break;
+                    final Host bookmark = bookmarks.lookup(selected);
+                    if(bookmark.equals(mount)) {
+                        // Use current working directory of browser for destination
+                        upload(bookmark, files, destination);
+                    }
+                    else {
+                        // No mounted browser
+                        if(StringUtils.isNotBlank(bookmark.getDefaultPath())) {
+                            upload(bookmark, files, new Path(PathNormalizer.normalize(bookmark.getDefaultPath()), EnumSet.of(Path.Type.directory)));
+                        }
+                        else {
+                            upload(bookmark, files, destination);
                         }
                     }
                 }
@@ -826,10 +807,9 @@ public class MainController extends BundleController implements NSApplication.De
     }
 
     /**
-     * Sent directly by theApplication to the delegate. The method should attempt to open the file filename,
-     * returning true if the file is successfully opened, and false otherwise. By design, a
-     * file opened through this method is assumed to be temporary its the application's
-     * responsibility to remove the file at the appropriate time.
+     * Sent directly by theApplication to the delegate. The method should attempt to open the file filename, returning
+     * true if the file is successfully opened, and false otherwise. By design, a file opened through this method is
+     * assumed to be temporary its the application's responsibility to remove the file at the appropriate time.
      */
     @Override
     public boolean application_openTempFile(NSApplication app, String filename) {
@@ -840,9 +820,9 @@ public class MainController extends BundleController implements NSApplication.De
     }
 
     /**
-     * Invoked immediately before opening an untitled file. Return false to prevent
-     * the application from opening an untitled file; return true otherwise.
-     * Note that applicationOpenUntitledFile is invoked if this method returns true.
+     * Invoked immediately before opening an untitled file. Return false to prevent the application from opening an
+     * untitled file; return true otherwise. Note that applicationOpenUntitledFile is invoked if this method returns
+     * true.
      */
     @Override
     public boolean applicationShouldOpenUntitledFile(NSApplication sender) {
@@ -864,19 +844,16 @@ public class MainController extends BundleController implements NSApplication.De
     }
 
     /**
-     * These events are sent whenever the Finder reactivates an already running application
-     * because someone double-clicked it again or used the dock to activate it. By default
-     * the Application Kit will handle this event by checking whether there are any visible
-     * NSWindows (not NSPanels), and, if there are none, it goes through the standard untitled
-     * document creation (the same as it does if theApplication is launched without any document
-     * to open). For most document-based applications, an untitled document will be created.
-     * The application delegate will also get a chance to respond to the normal untitled document
-     * delegations. If you implement this method in your application delegate, it will be called
-     * before any of the default behavior happens. If you return true, then NSApplication will
-     * go on to do its normal thing. If you return false, then NSApplication will do nothing.
-     * So, you can either implement this method, do nothing, and return false if you do not
-     * want anything to happen at all (not recommended), or you can implement this method,
-     * handle the event yourself in some custom way, and return false.
+     * These events are sent whenever the Finder reactivates an already running application because someone
+     * double-clicked it again or used the dock to activate it. By default the Application Kit will handle this event by
+     * checking whether there are any visible NSWindows (not NSPanels), and, if there are none, it goes through the
+     * standard untitled document creation (the same as it does if theApplication is launched without any document to
+     * open). For most document-based applications, an untitled document will be created. The application delegate will
+     * also get a chance to respond to the normal untitled document delegations. If you implement this method in your
+     * application delegate, it will be called before any of the default behavior happens. If you return true, then
+     * NSApplication will go on to do its normal thing. If you return false, then NSApplication will do nothing. So, you
+     * can either implement this method, do nothing, and return false if you do not want anything to happen at all (not
+     * recommended), or you can implement this method, handle the event yourself in some custom way, and return false.
      */
     @Override
     public boolean applicationShouldHandleReopen_hasVisibleWindows(final NSApplication app, final boolean visibleWindowsFound) {
@@ -913,13 +890,12 @@ public class MainController extends BundleController implements NSApplication.De
     private final CountDownLatch bookmarksSemaphore = new CountDownLatch(1);
 
     /**
-     * Sent by the default notification center after the application has been launched and initialized but
-     * before it has received its first event. aNotification is always an
-     * ApplicationDidFinishLaunchingNotification. You can retrieve the NSApplication
-     * object in question by sending object to aNotification. The delegate can implement
-     * this method to perform further initialization. If the user started up the application
-     * by double-clicking a file, the delegate receives the applicationOpenFile message before receiving
-     * applicationDidFinishLaunching. (applicationWillFinishLaunching is sent before applicationOpenFile.)
+     * Sent by the default notification center after the application has been launched and initialized but before it has
+     * received its first event. aNotification is always an ApplicationDidFinishLaunchingNotification. You can retrieve
+     * the NSApplication object in question by sending object to aNotification. The delegate can implement this method
+     * to perform further initialization. If the user started up the application by double-clicking a file, the delegate
+     * receives the applicationOpenFile message before receiving applicationDidFinishLaunching.
+     * (applicationWillFinishLaunching is sent before applicationOpenFile.)
      */
     @Override
     public void applicationDidFinishLaunching(NSNotification notification) {
@@ -1102,10 +1078,9 @@ public class MainController extends BundleController implements NSApplication.De
     }
 
     /**
-     * Invoked from within the terminate method immediately before the
-     * application terminates. sender is the NSApplication to be terminated.
-     * If this method returns false, the application is not terminated,
-     * and control returns to the main event loop.
+     * Invoked from within the terminate method immediately before the application terminates. sender is the
+     * NSApplication to be terminated. If this method returns false, the application is not terminated, and control
+     * returns to the main event loop.
      *
      * @param app Application instance
      * @return Return true to allow the application to terminate.
@@ -1224,6 +1199,7 @@ public class MainController extends BundleController implements NSApplication.De
             log.debug(String.format("Application will quit with notification %s", notification));
         }
         this.invalidate();
+        OAuth2TokenListenerRegistry.get().shutdown();
         // Clear temporary files
         TemporaryFileServiceFactory.get().shutdown();
         //Terminating rendezvous discovery
@@ -1338,9 +1314,8 @@ public class MainController extends BundleController implements NSApplication.De
     }
 
     /**
-     * Posted before a user session is switched out. This allows an application to
-     * disable some processing when its user session is switched out, and reenable when that
-     * session gets switched back in, for example.
+     * Posted before a user session is switched out. This allows an application to disable some processing when its user
+     * session is switched out, and reenable when that session gets switched back in, for example.
      *
      * @param notification Notification name
      */
@@ -1367,9 +1342,10 @@ public class MainController extends BundleController implements NSApplication.De
 
         public ImporterBackgroundAction(final AbstractHostCollection bookmarks, final CountDownLatch lock) {
             this(bookmarks, lock, Arrays.asList(
-                new Transmit4BookmarkCollection(), new FilezillaBookmarkCollection(), new FetchBookmarkCollection(),
+                new Transmit5BookmarkCollection(), new Transmit4BookmarkCollection(), new FilezillaBookmarkCollection(), new FetchBookmarkCollection(),
                 new FlowBookmarkCollection(), new InterarchyBookmarkCollection(), new CrossFtpBookmarkCollection(), new FireFtpBookmarkCollection(),
-                new Expandrive3BookmarkCollection(), new Expandrive4BookmarkCollection(), new Expandrive5BookmarkCollection(), new Expandrive6BookmarkCollection()));
+                new Expandrive3BookmarkCollection(), new Expandrive4BookmarkCollection(), new Expandrive5BookmarkCollection(), new Expandrive6BookmarkCollection(),
+                new Expandrive7BookmarkCollection(), new CloudMounterBookmarkCollection()));
         }
 
         public ImporterBackgroundAction(final AbstractHostCollection bookmarks, final CountDownLatch lock, final List<ThirdpartyBookmarkCollection> collections) {

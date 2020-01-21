@@ -28,7 +28,9 @@ import ch.cyberduck.binding.foundation.NSEnumerator;
 import ch.cyberduck.binding.foundation.NSNotification;
 import ch.cyberduck.binding.foundation.NSObject;
 import ch.cyberduck.core.BookmarkNameProvider;
+import ch.cyberduck.core.CertificateStoreFactory;
 import ch.cyberduck.core.DefaultCharsetProvider;
+import ch.cyberduck.core.DisabledCertificateIdentityCallback;
 import ch.cyberduck.core.Host;
 import ch.cyberduck.core.LocaleFactory;
 import ch.cyberduck.core.LoginOptions;
@@ -44,7 +46,6 @@ import org.rococoa.Rococoa;
 import org.rococoa.Selector;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -70,7 +71,8 @@ public class DefaultBookmarkController extends BookmarkController {
     @Outlet
     private NSPopUpButton encodingPopup;
 
-    private final KeychainX509KeyManager x509KeyManager = new KeychainX509KeyManager(bookmark, this);
+    private final KeychainX509KeyManager x509KeyManager = new KeychainX509KeyManager(new DisabledCertificateIdentityCallback(), bookmark,
+        CertificateStoreFactory.get());
 
     public DefaultBookmarkController(final Host bookmark) {
         this(bookmark, new LoginOptions(bookmark.getProtocol()));
@@ -221,7 +223,7 @@ public class DefaultBookmarkController extends BookmarkController {
         this.timezonePopup.addItemWithTitle(UTC.getID());
         this.timezonePopup.lastItem().setRepresentedObject(UTC.getID());
         this.timezonePopup.menu().addItem(NSMenuItem.separatorItem());
-        Collections.sort(timezones, new Comparator<String>() {
+        timezones.sort(new Comparator<String>() {
             @Override
             public int compare(String o1, String o2) {
                 return TimeZone.getTimeZone(o1).getID().compareTo(TimeZone.getTimeZone(o2).getID());
