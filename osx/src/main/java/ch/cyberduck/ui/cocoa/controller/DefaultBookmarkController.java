@@ -115,24 +115,19 @@ public class DefaultBookmarkController extends BookmarkController {
     public void setLabelsField(final NSTokenField f) {
         this.labelsField = f;
         notificationCenter.addObserver(this.id(),
-            Foundation.selector("tokenFieldDidChange:"),
+            Foundation.selector("labelsFieldDidChange:"),
             NSControl.NSControlTextDidEndEditingNotification,
             f.id());
         this.addObserver(new BookmarkObserver() {
             @Override
             public void change(final Host bookmark) {
-                if(bookmark.getLabels().isEmpty()) {
-                    f.setObjectValue(NSArray.array());
-                }
-                else {
-                    f.setObjectValue(NSArray.arrayWithObjects(bookmark.getLabels().toArray(new String[bookmark.getLabels().size()])));
-                }
+                f.setObjectValue(bookmark.getLabels().isEmpty() ? NSArray.array() : NSArray.arrayWithObjects(bookmark.getLabels().toArray(new String[bookmark.getLabels().size()])));
             }
         });
     }
 
     @Action
-    public void tokenFieldDidChange(final NSNotification sender) {
+    public void labelsFieldDidChange(final NSNotification sender) {
         final Set<String> labels = new HashSet<>();
         final NSArray dict = Rococoa.cast(labelsField.objectValue(), NSArray.class);
         final NSEnumerator i = dict.objectEnumerator();
