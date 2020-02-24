@@ -16,7 +16,9 @@ package ch.cyberduck.core.nextcloud;
  */
 
 import ch.cyberduck.core.Host;
+import ch.cyberduck.core.ListService;
 import ch.cyberduck.core.UrlProvider;
+import ch.cyberduck.core.dav.DAVAttributesFinderFeature;
 import ch.cyberduck.core.dav.DAVSession;
 import ch.cyberduck.core.features.Lock;
 import ch.cyberduck.core.features.PromptUrlProvider;
@@ -36,6 +38,9 @@ public class NextcloudSession extends DAVSession {
         if(type == Lock.class) {
             // https://github.com/nextcloud/server/issues/1308
             return null;
+        }
+        if(type == ListService.class) {
+            return (T) new NextcloudListService(this, new DAVAttributesFinderFeature(this));
         }
         if(type == Write.class) {
             return (T) new NextcloudWriteFeature(this);
